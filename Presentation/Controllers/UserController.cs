@@ -25,71 +25,107 @@ namespace ManagerTestK2.Controllers
         [HttpGet("Users")]
         public async Task<ActionResult<List<UserDTO>>> Get([FromQuery] PaginationParams paginationParams)
         {
-            var users = await _userService.GetAllUsers(paginationParams.PageNumber, paginationParams.PageSize);
-
-            if (users == null)
-                return NotFound("Usuários não encontrados.");
-
-            Response.AddPaginationHeader(new PaginationHeader(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages));
-            return Ok(new
+            try
             {
-                Total = users.TotalCount,
-                data = users
-            });
+                var users = await _userService.GetAllUsers(paginationParams.PageNumber, paginationParams.PageSize);
+
+                if (users == null)
+                    return NotFound("Usuários não encontrados.");
+
+                Response.AddPaginationHeader(new PaginationHeader(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages));
+                return Ok(new
+                {
+                    Total = users.TotalCount,
+                    data = users
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpGet("{idUser:int}")]
         public async Task<ActionResult<UserDTO>> Get(int idUser)
         {
+            try
+            {
+                var user = await _userService.GetUserById(idUser);
+                if (user == null)
+                    return NotFound("Usuário não encontrado.");
 
-            var user = await _userService.GetUserById(idUser);
-            if (user == null)
-                return NotFound("Usuário não encontrado.");
-
-            return Ok(user);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpPut]
         public async Task<ActionResult> Update(UserDTO userDTO)
         {
-            #region verifica nível de permissão do usuário logado
-            var userIdClaim = int.Parse(User.FindFirst("id").Value);
-            var userClaim = await _userService.GetUserById(userIdClaim);
+            try
+            {
+                var userIdClaim = int.Parse(User.FindFirst("id").Value);
+                var userClaim = await _userService.GetUserById(userIdClaim);
 
-            if (!userClaim.IsAdmin)
-                return Unauthorized("Você não tem permissão para atualizar este usuário.");
-            #endregion
+                if (!userClaim.IsAdmin)
+                    return Unauthorized("Você não tem permissão para atualizar este usuário.");
 
 
-            if (userDTO == null)
-                return BadRequest("Dados inválidos");
+                if (userDTO == null)
+                    return BadRequest("Dados inválidos");
 
-            var userUpdated = await _userService.UpdateUser(userDTO);
+                var userUpdated = await _userService.UpdateUser(userDTO);
 
-            if (userUpdated == null)
-                return BadRequest("Erro ao atualizar usuário.");
+                if (userUpdated == null)
+                    return BadRequest("Erro ao atualizar usuário.");
 
-            return Ok("Usuário atualizado com sucesso.");
+                return Ok("Usuário atualizado com sucesso.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    error = ex.Message
+                });
+            }
+
         }
 
         [HttpDelete("{idUser:int}")]
         public async Task<ActionResult> Delete(int idUser)
         {
-            #region verifica nível de permissão do usuário logado
-            var userIdClaim = int.Parse(User.FindFirst("id").Value);
-            var userClaim = await _userService.GetUserById(userIdClaim);
+            try
+            {
+                var userIdClaim = int.Parse(User.FindFirst("id").Value);
+                var userClaim = await _userService.GetUserById(userIdClaim);
 
-            if (!userClaim.IsAdmin)
-                return Unauthorized("Você não tem permissão para excluir este usuário.");
-            #endregion
+                if (!userClaim.IsAdmin)
+                    return Unauthorized("Você não tem permissão para excluir este usuário.");
 
 
-            var user = await _userService.DeleteUser(idUser);
+                var user = await _userService.DeleteUser(idUser);
 
-            if (user == null)
-                return BadRequest("Erro ao excluir usuário.");
+                if (user == null)
+                    return BadRequest("Erro ao excluir usuário.");
 
-            return Ok("Usuário excluído com sucesso");
+                return Ok("Usuário excluído com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    error = ex.Message
+                });
+            }
         }
     }
 }
